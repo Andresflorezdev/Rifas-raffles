@@ -1,0 +1,78 @@
+1. Stack
+
+Frontend: React (Vite) + TypeScript
+Estilos: Tailwind CSS
+Gestor de paquetes: pnpm
+Estado global: Zustand
+Backend: Supabase (PostgreSQL + Auth + cliente JS)
+Autenticación: OTP por correo (sin contraseñas)
+Persistencia: Supabase (ya no localStorage)
+
+2. Backend en Supabase (ya construido)
+
+Tablas:
+Perfiles (id, nombre obligatorio, telefono opcional, created_at)
+rifas (id, user_id, nombre, descripcion, imagen_url, cantidad_numeros, precio_numero, fecha_sorteo, estado)
+numeros (id, rifa_id, numero, estado, comprador_nombre, comprador_telefono, notas, fecha_apartado, fecha_pago)
+
+Triggers:
+Al crear una rifa → se generan automáticamente todos sus números
+Al registrarse un usuario → se crea automáticamente su perfil (toma el nombre del metadata del signup)
+
+Seguridad:
+RLS activo en las 3 tablas (cada usuario ve/edita solo lo suyo)
+search_path fijado en las funciones security definer
+Ejecución directa de crear_perfil_usuario() revocada (solo corre vía trigger)
+
+3. Estructura de carpetas del frontend
+src/
+  components/
+    RaffleCard.tsx
+    NumberGrid.tsx        # vista tablero
+    NumberCell.tsx
+    NumberTable.tsx        # vista tabla tipo Excel
+    BuyerModal.tsx
+    StatsBar.tsx
+    ProtectedRoute.tsx
+  pages/
+    LoginRegistro.tsx      # correo + nombre
+    VerifyCode.tsx          # código OTP de 6 dígitos
+    Home.tsx
+    RaffleForm.tsx
+    RaffleDetail.tsx        # toggle tablero/tabla
+    MiCuenta.tsx            # editar nombre/teléfono
+  store/
+    useAuthStore.ts
+    useRaffleStore.ts
+  lib/
+    supabaseClient.ts
+    exportToExcel.ts
+  types/
+    raffle.ts
+
+4. Flujo de pantallas
+
+LoginRegistro: pide correo + nombre (nombre obligatorio) → dispara signInWithOtp
+VerifyCode: input de 6 dígitos → verifyOtp → redirige a Home
+Home: tarjetas de rifas del usuario, progreso de venta, botón "crear rifa"
+RaffleForm: nombre, descripción, imagen, cantidad de números, precio, fecha de sorteo
+RaffleDetail: toggle Tablero / Tabla, barra de estadísticas arriba
+MiCuenta: editar nombre y teléfono (opcional) cuando quiera
+
+5. Paleta de colores
+
+Uso	Hex
+Fondo	
+#FFFCF9
+Superficie/tarjetas	
+#F5F0E8
+Primario/CTA	
+#FF6B4A
+Número disponible	
+#E5E7EB
+Número apartado	
+#FFC145
+Número pagado	
+#2EC4B6
+Texto principal	
+#1F2937
