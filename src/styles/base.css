@@ -1,0 +1,72 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--cream);
+}
+
+body,
+input,
+textarea,
+select {
+    transition: background-color .2s, color .2s, border-color .2s;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 2px;
+}
+
+#root {
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0;
+    border: 0;
+    display: block;
+    text-align: left;
+}
+
+.muted {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.eyebrow,
+.step-label {
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .14em;
+    font-weight: 700;
+}
+
+.coral-text {
+    color: var(--coral);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

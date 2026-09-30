@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 
 interface AuthState {
   session: Session | null;
@@ -20,6 +20,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   setDemoAuthenticated: (demoAuthenticated) =>
     set({ demoAuthenticated, loading: false }),
   initialize: () => {
+    if (!isSupabaseConfigured) {
+      set({ loading: false });
+      return () => undefined;
+    }
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
       if (active) set({ session: data.session, loading: false });
@@ -33,7 +37,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     };
   },
   signOut: async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured) await supabase.auth.signOut();
+    sessionStorage.removeItem('raffles-email');
+    sessionStorage.removeItem('raffles-name');
     set({ session: null, demoAuthenticated: false });
   },
 }));

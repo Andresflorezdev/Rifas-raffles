@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import './App.css';
 import './theme.css';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuthStore } from './store/useAuthStore';
@@ -52,7 +51,7 @@ function App() {
             <Route path="/inicio" element={<Home />} />
             <Route path="/cuenta" element={<MiCuenta />} />
             <Route path="/rifa/nueva" element={<RaffleForm />} />
-            <Route path="/rifa/demo" element={<RaffleDetail />} />
+            <Route path="/rifa/:raffleId" element={<RaffleDetail />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
