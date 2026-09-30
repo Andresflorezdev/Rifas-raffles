@@ -1,27 +1,26 @@
-import { Plus, Search, Ticket } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppHeader } from '../components/AppHeader';
+import { RaffleCard } from '../components/raffles/RaffleCard';
+import { useRaffles } from '../hooks/useRaffles';
 
-const demoRaffles = [
-  {
-    name: 'Kit de café de especialidad',
-    detail: '100 números · $15.000 c/u',
-    sold: 68,
-    color: 'coral',
-    date: 'Sorteo · 28 oct 2026',
-  },
-  {
-    name: 'Bicicleta urbana',
-    detail: '200 números · $10.000 c/u',
-    sold: 124,
-    color: 'teal',
-    date: 'Sorteo · 14 nov 2026',
-  },
-];
+function formatCurrency(value: number) {
+  return `$${value.toLocaleString('es-CO')}`;
+}
 
 export function Home() {
   const navigate = useNavigate();
   const name = sessionStorage.getItem('raffles-name') || 'Creador';
+  const { raffles, loading, error } = useRaffles();
+  const [search, setSearch] = useState('');
+
+  const visibleRaffles = raffles.filter((raffle) =>
+    raffle.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+  );
+  const activeRaffles = raffles.filter((raffle) => raffle.status === 'activa');
+  const soldNumbers = raffles.reduce((total, raffle) => total + raffle.sold, 0);
+  const revenue = raffles.reduce((total, raffle) => total + raffle.revenue, 0);
 
   return (
     <main className="app-shell">
@@ -45,53 +44,47 @@ export function Home() {
         <section className="summary-strip">
           <div>
             <span>Rifas activas</span>
-            <strong>2</strong>
+            <strong>{activeRaffles.length}</strong>
           </div>
           <div>
             <span>Números vendidos</span>
-            <strong>192</strong>
+            <strong>{soldNumbers}</strong>
           </div>
           <div>
             <span>Recaudado</span>
-            <strong>$2.260.000</strong>
+            <strong>{formatCurrency(revenue)}</strong>
           </div>
           <div className="summary-search">
             <Search size={18} />
-            <input placeholder="Buscar una rifa" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar una rifa"
+            />
           </div>
         </section>
         <div className="section-heading">
           <h2>Tus rifas</h2>
-          <span>2 activas</span>
+          <span>{activeRaffles.length} activas</span>
         </div>
+        {loading && <p className="muted">Cargando tus rifas...</p>}
+        {error && (
+          <p className="form-error">No se pudieron cargar las rifas: {error}</p>
+        )}
+        {!loading && !error && visibleRaffles.length === 0 && (
+          <p className="muted">
+            {search
+              ? 'No encontramos rifas con ese nombre.'
+              : 'Aún no tienes rifas creadas.'}
+          </p>
+        )}
         <div className="raffle-grid">
-          {demoRaffles.map((raffle) => (
-            <article className="raffle-card" key={raffle.name}>
-              <div className={`raffle-image ${raffle.color}`}>
-                <Ticket size={42} strokeWidth={1.3} />
-                <span>RIFA</span>
-              </div>
-              <div className="raffle-card-body">
-                <div className="card-title-row">
-                  <h3>{raffle.name}</h3>
-                  <span className="status-pill">Activa</span>
-                </div>
-                <p className="muted small">{raffle.detail}</p>
-                <div className="progress-meta">
-                  <span>{raffle.sold}/100 vendidos</span>
-                  <strong>{raffle.sold}%</strong>
-                </div>
-                <div className="progress-track">
-                  <span style={{ width: `${raffle.sold}%` }} />
-                </div>
-                <div className="card-footer">
-                  <span>{raffle.date}</span>
-                  <button onClick={() => navigate('/rifa/demo')}>
-                    Ver detalle <span>→</span>
-                  </button>
-                </div>
-              </div>
-            </article>
+          {visibleRaffles.map((raffle) => (
+            <RaffleCard
+              key={raffle.id}
+              raffle={raffle}
+              onOpen={(id) => navigate(`/rifa/${id}`)}
+            />
           ))}
         </div>
         <button

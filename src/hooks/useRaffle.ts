@@ -1,0 +1,139 @@
+import { useEffect, useState } from 'react';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { updateRaffleNumber } from '../services/raffleNumberService';
+import { getRaffle } from '../services/raffleService';
+import type { NumberStatus, Raffle } from '../types/raffle';
+
+export interface RaffleNumberView {
+  id: string;
+  number: number;
+  status: NumberStatus;
+  buyer: string;
+}
+
+const demoNumbers: RaffleNumberView[] = Array.from(
+  { length: 60 },
+  (_, index) => ({
+    id: `demo-number-${index + 1}`,
+    number: index + 1,
+    status: index < 18 ? 'pagado' : index < 29 ? 'apartado' : 'disponible',
+    buyer:
+      index < 18
+        ? ['Laura Martínez', 'Andrés Rojas', 'Camila Gómez'][index % 3]
+        : index < 29
+          ? 'Por confirmar'
+          : '',
+  }),
+);
+
+const demoRaffle: Raffle = {
+  id: 'demo-cafe',
+  user_id: 'demo-user',
+  nombre: 'Kit de café de especialidad',
+  descripcion: null,
+  imagen_url: null,
+  cantidad_numeros: 100,
+  precio_numero: 15000,
+  fecha_sorteo: '2026-10-28',
+  estado: 'activa',
+  created_at: '2026-01-01T00:00:00.000Z',
+};
+
+export function useRaffle(raffleId?: string) {
+  const [raffle, setRaffle] = useState<Raffle | null>(
+    isSupabaseConfigured ? null : demoRaffle,
+  );
+  const [numbers, setNumbers] = useState<RaffleNumberView[]>(
+    isSupabaseConfigured ? [] : demoNumbers,
+  );
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !raffleId) return;
+
+    void getRaffle(raffleId)
+      .then((item) => {
+        setRaffle(item);
+        setNumbers(
+          item.numeros.map((number) => ({
+            id: number.id,
+            number: number.numero,
+            status: number.estado,
+            buyer: number.comprador_nombre || '',
+          })),
+        );
+      })
+      .catch((loadError: Error) => setError(loadError.message))
+      .finally(() => setLoading(false));
+  }, [raffleId]);
+
+  const updateStatus = async (number: number, status: NumberStatus) => {
+    const currentNumber = numbers.find((item) => item.number === number);
+    if (!currentNumber) return false;
+
+    setSaving(true);
+    setError('');
+    try {
+      await updateRaffleNumber(currentNumber.id, status, currentNumber.buyer);
+      setNumbers((current) =>
+        current.map((item) =>
+          item.number === number ? { ...item, status } : item,
+        ),
+      );
+      return true;
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'No se pudo guardar el número.',
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateNumber = async (
+    number: number,
+    status: NumberStatus,
+    buyer: string,
+  ) => {
+    const currentNumber = numbers.find((item) => item.number === number);
+    if (!currentNumber) return false;
+
+    setSaving(true);
+    setError('');
+    try {
+      await updateRaffleNumber(currentNumber.id, status, buyer);
+      setNumbers((current) =>
+        current.map((item) =>
+          item.number === number
+            ? { ...item, status, buyer: buyer.trim() }
+            : item,
+        ),
+      );
+      return true;
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'No se pudo guardar el número.',
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return {
+    raffle,
+    numbers,
+    loading,
+    error,
+    saving,
+    updateStatus,
+    updateNumber,
+  };
+}
