@@ -1,5 +1,5 @@
 import { Check, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { AppHeader } from '../components/AppHeader';
@@ -11,6 +11,26 @@ export function MiCuenta() {
   const [phone, setPhone] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: profile, error: profileError } = await supabase
+        .from('perfiles')
+        .select('nombre, telefono')
+        .eq('id', data.user.id)
+        .maybeSingle();
+      if (profileError) {
+        setError(profileError.message);
+        return;
+      }
+      if (profile) {
+        setName(profile.nombre || '');
+        setPhone(profile.telefono || '');
+      }
+    });
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

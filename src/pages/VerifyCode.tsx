@@ -20,6 +20,10 @@ export function VerifyCode() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!email) {
+      navigate('/', { replace: true });
+      return;
+    }
     if (token.length !== 6) return setError('El código debe tener 6 dígitos.');
     setChecking(true);
     if (isSupabaseConfigured) {
@@ -90,9 +94,11 @@ export function VerifyCode() {
               <ArrowRight size={18} />
             </button>
           </form>
-          <p className="demo-note">
-            En modo demo, usa cualquier código de 6 dígitos.
-          </p>
+          {!isSupabaseConfigured && (
+            <p className="demo-note">
+              En modo demo, usa cualquier código de 6 dígitos.
+            </p>
+          )}
         </div>
       </section>
     </main>

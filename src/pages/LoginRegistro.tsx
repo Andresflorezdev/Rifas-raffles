@@ -54,7 +54,6 @@ export function LoginRegistro() {
         </div>
         <div className="ticket-stack" aria-hidden="true">
           <span>• • • • • • • •</span>
-          <strong>01 · 24 · 88</strong>
         </div>
       </section>
       <section className="auth-panel">
