@@ -1,0 +1,141 @@
+﻿:root:not([data-theme='light']) .topbar {
+    background: rgba(18, 22, 28, .92);
+}
+
+:root:not([data-theme='light']) .raffle-card,
+:root:not([data-theme='light']) .number-table-wrap,
+:root:not([data-theme='light']) .number-modal,
+:root:not([data-theme='light']) .status-option,
+:root:not([data-theme='light']) .profile-dropdown {
+    background: var(--panel);
+}
+
+:root:not([data-theme='light']) .auth-form input,
+:root:not([data-theme='light']) .raffle-form input,
+:root:not([data-theme='light']) .raffle-form textarea,
+:root:not([data-theme='light']) .account-form input,
+:root:not([data-theme='light']) .modal-label input,
+:root:not([data-theme='light']) .number-table select {
+    background: var(--field);
+    color: var(--ink);
+}
+
+:root:not([data-theme='light']) .summary-strip,
+:root:not([data-theme='light']) .stats-grid>div {
+    border-color: var(--line);
+}
+
+:root:not([data-theme='light']) .summary-search input {
+    color: var(--ink);
+}
+
+:root:not([data-theme='light']) .empty-action {
+    border-color: var(--line);
+}
+
+:root:not([data-theme='light']) .view-toggle button,
+:root:not([data-theme='light']) .filter-buttons button {
+    background: var(--panel);
+    color: var(--muted);
+}
+
+:root:not([data-theme='light']) .view-toggle button.selected,
+:root:not([data-theme='light']) .filter-buttons button.selected {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: #fff;
+}
+
+:root:not([data-theme='light']) .number-cell.disponible {
+    background: #294466;
+    color: #d9e9ff;
+}
+
+:root:not([data-theme='light']) .number-cell.apartado {
+    background: #9b731f;
+    color: #fff8e3;
+}
+
+:root:not([data-theme='light']) .number-cell.pagado {
+    background: #1c8f84;
+}
+
+:root:not([data-theme='light']) .stats-grid strong {
+    color: var(--ink);
+}
+
+:root:not([data-theme='light']) .yellow-text {
+    color: #f2bd3f;
+}
+
+:root:not([data-theme='light']) .teal-text {
+    color: #55d4c6;
+}
+
+:root:not([data-theme='light']) .status-pill.disponible {
+    color: #b9d3ff;
+    background: #203650;
+}
+
+:root:not([data-theme='light']) .status-pill.apartado {
+    color: #f2bd3f;
+    background: #493817;
+}
+
+:root:not([data-theme='light']) .status-pill.pagado {
+    color: #66ddd0;
+    background: #163f3b;
+}
+
+:root[data-theme='light'] .view-toggle button.selected,
+:root[data-theme='light'] .filter-buttons button.selected {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: #fff;
+}
+
+:root[data-theme='light'] .number-cell.disponible {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+:root[data-theme='light'] .number-cell.apartado {
+    background: #ffc145;
+    color: #5d4300;
+}
+
+:root[data-theme='light'] .number-cell.pagado {
+    background: #2ec4b6;
+    color: #073f3a;
+}
+
+:root[data-theme='light'] .yellow-text {
+    color: #b47700;
+}
+
+:root[data-theme='light'] .teal-text {
+    color: #168c81;
+}
+
+:root[data-theme='light'] .status-pill.disponible {
+    color: #2563a9;
+    background: #e5efff;
+}
+
+:root[data-theme='light'] .status-pill.apartado {
+    color: #966b00;
+    background: #fff0bf;
+}
+
+:root[data-theme='light'] .status-pill.pagado {
+    color: #147c73;
+    background: #d7f3ef;
+}
+
+:root:not([data-theme='light']) .status-dot.disponible {
+    background: #6fa8e8;
+}
+
+:root[data-theme='light'] .status-dot.disponible {
+    background: #3b82f6;
+}
