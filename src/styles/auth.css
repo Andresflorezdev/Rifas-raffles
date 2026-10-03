@@ -195,7 +195,7 @@
 
 .primary-button:disabled {
     opacity: .7;
-    cursor: wait;
+    cursor: default;
     transform: none;
 }
 
