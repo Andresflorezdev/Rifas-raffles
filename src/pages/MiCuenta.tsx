@@ -5,17 +5,29 @@ import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { AppHeader } from '../components/AppHeader';
 import { getUserFriendlyError } from '../lib/errorMessages';
 
+const namePattern = /^[\p{L}\s]+$/u;
+
+function sanitizePhone(value: string) {
+  const allowedCharacters = value.replace(/[^\d+\s()-]/g, '');
+  let digitCount = 0;
+  return [...allowedCharacters]
+    .filter((character) => {
+      if (/\d/.test(character)) digitCount += 1;
+      return digitCount <= 15;
+    })
+    .join('');
+}
+
 export function MiCuenta() {
   const [name, setName] = useState(
-    sessionStorage.getItem('raffles-name') || 'Camila Rojas',
+    sessionStorage.getItem('raffles-name') || '',
   );
-  const [phone, setPhone] = useState('+57 300 123 4567');
+  const [phone, setPhone] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-
     void supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
       const { data: profile, error: profileError } = await supabase
@@ -34,7 +46,7 @@ export function MiCuenta() {
       }
       if (profile) {
         setName(profile.nombre || '');
-        setPhone(profile.telefono || '');
+        setPhone(sanitizePhone(profile.telefono || ''));
       }
     });
   }, []);
@@ -43,6 +55,10 @@ export function MiCuenta() {
     event.preventDefault();
     if (!name.trim()) {
       setError('El nombre es obligatorio.');
+      return;
+    }
+    if (!namePattern.test(name.trim())) {
+      setError('El nombre solo puede contener letras y espacios.');
       return;
     }
     setError('');
@@ -66,45 +82,54 @@ export function MiCuenta() {
     }
     sessionStorage.setItem('raffles-name', name.trim());
     setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
+    window.setTimeout(() => setSaved(false), 2500);
   };
 
   return (
     <main className="app-shell form-page">
       <AppHeader />
       <div className="account-content">
-        <div className="account-icon">
-          <UserRound size={28} />
-        </div>
-        <p className="eyebrow coral-text">Mi cuenta</p>
-        <h1>Tus datos, siempre bajo control.</h1>
-        <p className="muted">
-          Actualiza la información con la que gestionas tus rifas.
-        </p>
-        <form className="account-form" onSubmit={handleSubmit}>
-          <label>
-            Nombre
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <label>
-            Teléfono <span className="label-hint">opcional</span>
-            <input
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              placeholder="+57 300 000 0000"
-            />
-          </label>
-          {error && <p className="form-error">{error}</p>}
-          {saved && (
-            <p className="saved-message">
-              <Check size={16} /> Cambios guardados
-            </p>
-          )}
-          <button className="primary-button">Guardar cambios</button>
-        </form>
+        <section className="account-card">
+          <div className="account-icon">
+            <UserRound size={28} />
+          </div>
+          <p className="eyebrow coral-text">Mi cuenta</p>
+          <h1>Tus datos, siempre bajo control.</h1>
+          <p className="muted">
+            Actualiza la información con la que gestionas tus rifas.
+          </p>
+          <form className="account-form" onSubmit={handleSubmit}>
+            <label>
+              Nombre
+              <input
+                value={name}
+                onChange={(event) =>
+                  setName(event.target.value.replace(/[^\p{L}\s]/gu, ''))
+                }
+              />
+            </label>
+            <label>
+              Teléfono <span className="label-hint">opcional</span>
+              <input
+                value={phone}
+                type="tel"
+                inputMode="tel"
+                maxLength={20}
+                onChange={(event) =>
+                  setPhone(sanitizePhone(event.target.value))
+                }
+                placeholder="+57 300 000 0000"
+              />
+            </label>
+            {error && <p className="form-error">{error}</p>}
+            {saved && (
+              <p className="saved-message">
+                <Check size={16} /> Cambios guardados
+              </p>
+            )}
+            <button className="primary-button">Guardar cambios</button>
+          </form>
+        </section>
       </div>
     </main>
   );

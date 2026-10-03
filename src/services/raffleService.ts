@@ -14,6 +14,8 @@ export interface RaffleWithNumbers extends Raffle {
   numeros: RaffleNumber[];
 }
 
+const RAFFLE_IMAGE_BUCKET = 'rifas-imagenes';
+
 export async function listRaffles(): Promise<RaffleSummary[]> {
   if (!isSupabaseConfigured) return [];
 
@@ -80,6 +82,34 @@ export async function deleteRaffle(id: string) {
 
   const { error } = await supabase.from('rifas').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function uploadRaffleImage(file: File) {
+  if (!isSupabaseConfigured) return null;
+
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Selecciona un archivo de imagen válido.');
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('La imagen no puede superar los 5 MB.');
+  }
+
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from(RAFFLE_IMAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      contentType: file.type,
+      upsert: false,
+    });
+  if (error) throw error;
+
+  const { data } = supabase.storage
+    .from(RAFFLE_IMAGE_BUCKET)
+    .getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export function countNumbers(

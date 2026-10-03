@@ -1,10 +1,13 @@
-import type { FormEvent } from 'react';
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { ArrowRight, Mail, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { getUserFriendlyError } from '../lib/errorMessages';
+
+const allowedEmailPattern = /^[^\s@]+@(gmail|hotmail)\.com$/i;
+const namePattern = /^[\p{L}\s]+$/u;
 
 export function LoginRegistro() {
   const navigate = useNavigate();
@@ -16,12 +19,17 @@ export function LoginRegistro() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!nombre.trim()) return setError('Escribe tu nombre para continuar.');
-    if (!email.includes('@')) return setError('Escribe un correo válido.');
+    if (!namePattern.test(nombre.trim())) {
+      return setError('El nombre solo puede contener letras y espacios.');
+    }
+    if (!allowedEmailPattern.test(email.trim())) {
+      return setError('Usa un correo Gmail o Hotmail terminado en .com.');
+    }
     setError('');
     setSending(true);
     if (isSupabaseConfigured) {
       const { error: authError } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.trim().toLowerCase(),
         options: { data: { nombre: nombre.trim() } },
       });
       if (authError) {
@@ -32,56 +40,94 @@ export function LoginRegistro() {
         return;
       }
     }
-    sessionStorage.setItem('raffles-email', email);
+    sessionStorage.setItem('raffles-email', email.trim().toLowerCase());
     sessionStorage.setItem('raffles-name', nombre.trim());
     navigate('/verificar');
   };
 
   return (
     <main className="auth-shell">
-      <div className="auth-glow" />
-      <header className="auth-header">
-        <span className="brand-badge">
-          <Sparkles size={16} /> Rifas App
-        </span>
+      <section className="auth-art" aria-label="Resumen de Rifas">
+        <div className="brand-mark">
+          <Sparkles size={18} /> rifas
+        </div>
+        <div className="art-copy">
+          <span className="eyebrow">Organiza. Aparta. Gana.</span>
+          <h1>
+            Tus rifas,
+            <br />
+            <em>en orden.</em>
+          </h1>
+          <p>
+            Una forma clara y bonita de llevar el control de cada número y cada
+            comprador.
+          </p>
+        </div>
+        <div className="ticket-stack" aria-hidden="true">
+          <span>• • • • • • • •</span>
+        </div>
+      </section>
+      <section className="auth-panel">
         <ThemeToggle />
-      </header>
-      <section className="auth-card">
-        <p className="eyebrow coral-text">Acceso rápido y seguro</p>
-        <h1>Entra o crea tu cuenta sin contraseñas.</h1>
-        <p className="muted">
-          Te enviaremos un código de 6 dígitos a tu correo para ingresar en
-          segundos.
-        </p>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>
-            Tu nombre
-            <input
-              value={nombre}
-              onChange={(event) => setNombre(event.target.value)}
-              placeholder="Ej. Camila Rojas"
-              autoComplete="name"
-            />
-          </label>
-          <label>
-            Correo electrónico
-            <div className="input-icon">
-              <Mail size={18} />
+        <div className="auth-panel-inner">
+          <span className="mobile-brand">rifas</span>
+          <p className="step-label">Bienvenido</p>
+          <h2>Empieza tu próxima rifa</h2>
+          <p className="muted">
+            Entra con tu correo. Te enviaremos un código de acceso, sin
+            contraseñas.
+          </p>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <label>
+              Tu nombre
               <input
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="camila@correo.com"
-                type="email"
-                autoComplete="email"
+                required
+                value={nombre}
+                onChange={(event) =>
+                  setNombre(event.target.value.replace(/[^\p{L}\s]/gu, ''))
+                }
+                placeholder="Ej. Camila Rojas"
+                autoComplete="name"
               />
-            </div>
-          </label>
-          {error && <p className="form-error">{error}</p>}
-          <button className="primary-button" disabled={sending}>
-            {sending ? 'Enviando código...' : 'Continuar'}
-            <ArrowRight size={18} />
-          </button>
-        </form>
+            </label>
+            <label>
+              Correo electrónico
+              <div className="input-icon">
+                <Mail size={18} />
+                <input
+                  required
+                  value={email}
+                  onChange={(event) => {
+                    event.currentTarget.setCustomValidity('');
+                    setEmail(event.target.value);
+                  }}
+                  placeholder="camila@correo.com"
+                  type="email"
+                  inputMode="email"
+                  pattern="[^\s@]+@(gmail|hotmail)\.com"
+                  title="Usa un correo Gmail o Hotmail terminado en .com"
+                  onInvalid={(event) =>
+                    event.currentTarget.setCustomValidity(
+                      'Usa un correo Gmail o Hotmail terminado en .com.',
+                    )
+                  }
+                  autoComplete="email"
+                />
+              </div>
+            </label>
+            {error && <p className="form-error">{error}</p>}
+            <button className="primary-button" disabled={sending}>
+              {sending ? 'Enviando código...' : 'Continuar'}{' '}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+          {!isSupabaseConfigured && (
+            <p className="demo-note">
+              Modo demo activo: puedes explorar la interfaz sin conectar
+              Supabase todavía.
+            </p>
+          )}
+        </div>
       </section>
     </main>
   );
