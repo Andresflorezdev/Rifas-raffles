@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { updateRaffleNumber } from '../services/raffleNumberService';
-import { getRaffle } from '../services/raffleService';
+import { getRaffle, updateRaffle } from '../services/raffleService';
 import type { NumberStatus, Raffle } from '../types/raffle';
 
 export interface RaffleNumberView {
@@ -31,6 +31,7 @@ const demoRaffle: Raffle = {
   user_id: 'demo-user',
   nombre: 'Kit de café de especialidad',
   descripcion: null,
+  notas: null,
   imagen_url: null,
   cantidad_numeros: 100,
   precio_numero: 15000,
@@ -127,6 +128,30 @@ export function useRaffle(raffleId?: string) {
     }
   };
 
+  const editRaffle = async (values: Parameters<typeof updateRaffle>[1]) => {
+    if (!raffle || raffle.estado !== 'activa') {
+      setError('Esta rifa está cerrada y no se puede modificar.');
+      return false;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      await updateRaffle(raffle.id, values);
+      setRaffle((current) => (current ? { ...current, ...values } : current));
+      return true;
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'No se pudo actualizar la rifa.',
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     raffle,
     numbers,
@@ -135,5 +160,6 @@ export function useRaffle(raffleId?: string) {
     saving,
     updateStatus,
     updateNumber,
+    editRaffle,
   };
 }

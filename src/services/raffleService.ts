@@ -47,6 +47,34 @@ export async function updateRaffleStatus(id: string, status: RaffleStatus) {
   if (error) throw error;
 }
 
+export async function updateRaffle(
+  id: string,
+  values: Pick<
+    Raffle,
+    | 'nombre'
+    | 'descripcion'
+    | 'imagen_url'
+    | 'cantidad_numeros'
+    | 'precio_numero'
+    | 'fecha_sorteo'
+  >,
+) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase.from('rifas').update(values).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateRaffleNotes(id: string, notes: string) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase
+    .from('rifas')
+    .update({ notas: notes.trim() || null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function deleteRaffle(id: string) {
   if (!isSupabaseConfigured) return;
 

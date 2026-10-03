@@ -1,4 +1,4 @@
-import { Save } from 'lucide-react';
+import { Pencil, LockKeyhole } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppHeader } from '../components/AppHeader';
@@ -11,6 +11,7 @@ import {
   type RaffleView,
 } from '../components/raffles/RaffleToolbar';
 import { RaffleStats } from '../components/raffles/RaffleStats';
+import { RaffleEditModal } from '../components/raffles/RaffleEditModal';
 import { useRaffle } from '../hooks/useRaffle';
 import type { NumberStatus } from '../types/raffle';
 
@@ -25,17 +26,26 @@ function formatDate(value: string | null) {
 
 export function RaffleDetail() {
   const { raffleId } = useParams();
-  const { raffle, numbers, loading, error, updateStatus, updateNumber } =
-    useRaffle(raffleId);
+  const {
+    raffle,
+    numbers,
+    loading,
+    error,
+    updateStatus,
+    updateNumber,
+    editRaffle,
+  } = useRaffle(raffleId);
   const [view, setView] = useState<RaffleView>('board');
   const [filter, setFilter] = useState<NumberFilter>('todos');
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
+  const [editingRaffle, setEditingRaffle] = useState(false);
 
   const visibleNumbers =
     filter === 'todos'
       ? numbers
       : numbers.filter((item) => item.status === filter);
   const selectedItem = numbers.find((item) => item.number === selectedNumber);
+  const isEditable = raffle?.estado === 'activa';
 
   if (loading) {
     return <div className="loading-screen">Cargando tu rifa...</div>;
@@ -65,8 +75,14 @@ export function RaffleDetail() {
               {raffle.precio_numero.toLocaleString('es-CO')} por número
             </p>
           </div>
-          <button className="secondary-button">
-            <Save size={16} /> Exportar
+          <button
+            className="secondary-button"
+            disabled={!isEditable}
+            onClick={() => setEditingRaffle(true)}
+            title={isEditable ? 'Editar rifa' : 'La rifa está cerrada'}
+          >
+            {isEditable ? <Pencil size={16} /> : <LockKeyhole size={16} />}
+            {isEditable ? 'Editar rifa' : 'Rifa cerrada'}
           </button>
         </div>
         <RaffleStats raffle={raffle} numbers={numbers} />
@@ -103,6 +119,13 @@ export function RaffleDetail() {
             if (updated) setSelectedNumber(null);
             return updated;
           }}
+        />
+      )}
+      {editingRaffle && isEditable && (
+        <RaffleEditModal
+          raffle={raffle}
+          onClose={() => setEditingRaffle(false)}
+          onSave={editRaffle}
         />
       )}
     </main>
