@@ -4,11 +4,16 @@ import type { NumberStatus } from '../../types/raffle';
 import type { RaffleNumberView } from '../../hooks/useRaffle';
 
 const statuses: NumberStatus[] = ['disponible', 'apartado', 'pagado'];
+const buyerNamePattern = /^[\p{L}\s]+$/u;
 
 interface NumberEditorModalProps {
   number: RaffleNumberView;
   onClose: () => void;
-  onSave: (status: NumberStatus, buyer: string) => Promise<boolean>;
+  onSave: (
+    status: NumberStatus,
+    buyer: string,
+    notes: string,
+  ) => Promise<boolean>;
 }
 
 export function NumberEditorModal({
@@ -18,12 +23,14 @@ export function NumberEditorModal({
 }: NumberEditorModalProps) {
   const [status, setStatus] = useState<NumberStatus>(number.status);
   const [buyer, setBuyer] = useState(number.buyer);
+  const [notes, setNotes] = useState(number.notes);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (buyer.trim() && !buyerNamePattern.test(buyer.trim())) return;
     setSaving(true);
     try {
-      await onSave(status, buyer);
+      await onSave(status, buyer, notes);
     } finally {
       setSaving(false);
     }
@@ -89,8 +96,19 @@ export function NumberEditorModal({
           Nombre del comprador
           <input
             value={buyer}
-            onChange={(event) => setBuyer(event.target.value)}
+            onChange={(event) =>
+              setBuyer(event.target.value.replace(/[^\p{L}\s]/gu, ''))
+            }
             placeholder="Ej. Camila Rojas"
+          />
+        </label>
+        <label className="modal-label">
+          Notas del comprador
+          <textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Teléfono, referencia u otra información"
+            rows={3}
           />
         </label>
         <div className="modal-actions">

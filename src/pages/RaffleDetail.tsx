@@ -37,6 +37,7 @@ export function RaffleDetail() {
   } = useRaffle(raffleId);
   const [view, setView] = useState<RaffleView>('board');
   const [filter, setFilter] = useState<NumberFilter>('todos');
+  const [search, setSearch] = useState('');
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [editingRaffle, setEditingRaffle] = useState(false);
 
@@ -44,6 +45,9 @@ export function RaffleDetail() {
     filter === 'todos'
       ? numbers
       : numbers.filter((item) => item.status === filter);
+  const searchedNumbers = visibleNumbers.filter((item) =>
+    String(item.number).padStart(2, '0').includes(search),
+  );
   const selectedItem = numbers.find((item) => item.number === selectedNumber);
   const isEditable = raffle?.estado === 'activa';
 
@@ -85,36 +89,52 @@ export function RaffleDetail() {
             {isEditable ? 'Editar rifa' : 'Rifa cerrada'}
           </button>
         </div>
-        <RaffleStats raffle={raffle} numbers={numbers} />
-        {error && <p className="form-error">{error}</p>}
-        <RaffleToolbar
-          view={view}
-          filter={filter}
-          onViewChange={setView}
-          onFilterChange={setFilter}
-        />
-        {view === 'board' ? (
-          <NumberBoard
-            numbers={visibleNumbers}
-            onSelect={(item) => setSelectedNumber(item.number)}
+        <section className="detail-card">
+          <RaffleStats raffle={raffle} numbers={numbers} />
+          {error && <p className="form-error">{error}</p>}
+          {!isEditable && (
+            <p className="locked-message">
+              Esta rifa está {raffle.estado} y no se puede modificar.
+            </p>
+          )}
+          <RaffleToolbar
+            view={view}
+            filter={filter}
+            onViewChange={setView}
+            onFilterChange={setFilter}
+            search={search}
+            onSearchChange={setSearch}
           />
-        ) : (
-          <NumberTable
-            numbers={visibleNumbers}
-            onSelect={(item) => setSelectedNumber(item.number)}
-            onStatusChange={updateStatus}
-          />
-        )}
+          {view === 'board' ? (
+            <NumberBoard
+              numbers={searchedNumbers}
+              onSelect={(item) => setSelectedNumber(item.number)}
+              disabled={!isEditable}
+            />
+          ) : (
+            <NumberTable
+              numbers={searchedNumbers}
+              onSelect={(item) => setSelectedNumber(item.number)}
+              onStatusChange={updateStatus}
+              disabled={!isEditable}
+            />
+          )}
+        </section>
       </div>
       {selectedItem && (
         <NumberEditorModal
           number={selectedItem}
           onClose={() => setSelectedNumber(null)}
-          onSave={async (status: NumberStatus, buyer: string) => {
+          onSave={async (
+            status: NumberStatus,
+            buyer: string,
+            notes: string,
+          ) => {
             const updated = await updateNumber(
               selectedItem.number,
               status,
               buyer,
+              notes,
             );
             if (updated) setSelectedNumber(null);
             return updated;

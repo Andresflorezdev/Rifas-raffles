@@ -1,4 +1,4 @@
-import { Grid3X3, List } from 'lucide-react';
+import { Grid3X3, List, Search } from 'lucide-react';
 import type { NumberStatus } from '../../types/raffle';
 
 export type RaffleView = 'board' | 'table';
@@ -9,6 +9,8 @@ interface RaffleToolbarProps {
   filter: NumberFilter;
   onViewChange: (view: RaffleView) => void;
   onFilterChange: (filter: NumberFilter) => void;
+  search: string;
+  onSearchChange: (search: string) => void;
 }
 
 export function RaffleToolbar({
@@ -16,6 +18,8 @@ export function RaffleToolbar({
   filter,
   onViewChange,
   onFilterChange,
+  search,
+  onSearchChange,
 }: RaffleToolbarProps) {
   return (
     <div className="detail-toolbar">
@@ -45,6 +49,31 @@ export function RaffleToolbar({
             </button>
           ),
         )}
+      </div>
+      <label className="number-search">
+        <Search size={16} />
+        <input
+          value={search}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          onChange={(event) =>
+            onSearchChange(event.target.value.replace(/\D/g, ''))
+          }
+          placeholder="Buscar número"
+          aria-label="Buscar número"
+        />
+      </label>
+      <div className="number-legend" aria-label="Leyenda de estados">
+        <span>
+          <i className="legend-dot disponible" /> Disponible
+        </span>
+        <span>
+          <i className="legend-dot apartado" /> Apartado
+        </span>
+        <span>
+          <i className="legend-dot pagado" /> Pagado
+        </span>
       </div>
     </div>
   );

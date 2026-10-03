@@ -5,12 +5,14 @@ interface NumberTableProps {
   numbers: RaffleNumberView[];
   onSelect: (number: RaffleNumberView) => void;
   onStatusChange: (number: number, status: NumberStatus) => void;
+  disabled?: boolean;
 }
 
 export function NumberTable({
   numbers,
   onSelect,
   onStatusChange,
+  disabled = false,
 }: NumberTableProps) {
   return (
     <div className="number-table-wrap">
@@ -28,7 +30,11 @@ export function NumberTable({
             <tr key={item.number}>
               <td>#{String(item.number).padStart(2, '0')}</td>
               <td>
-                <button className="buyer-link" onClick={() => onSelect(item)}>
+                <button
+                  className="buyer-link"
+                  disabled={disabled}
+                  onClick={() => onSelect(item)}
+                >
                   {item.buyer || 'Sin comprador'}
                 </button>
               </td>
@@ -40,6 +46,7 @@ export function NumberTable({
               <td>
                 <select
                   value={item.status}
+                  disabled={disabled}
                   onChange={(event) =>
                     onStatusChange(
                       item.number,

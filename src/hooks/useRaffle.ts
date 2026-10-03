@@ -9,6 +9,7 @@ export interface RaffleNumberView {
   number: number;
   status: NumberStatus;
   buyer: string;
+  notes: string;
 }
 
 const demoNumbers: RaffleNumberView[] = Array.from(
@@ -23,6 +24,7 @@ const demoNumbers: RaffleNumberView[] = Array.from(
         : index < 29
           ? 'Por confirmar'
           : '',
+    notes: '',
   }),
 );
 
@@ -58,12 +60,16 @@ export function useRaffle(raffleId?: string) {
       .then((item) => {
         setRaffle(item);
         setNumbers(
-          item.numeros.map((number) => ({
-            id: number.id,
-            number: number.numero,
-            status: number.estado,
-            buyer: number.comprador_nombre || '',
-          })),
+          item.numeros
+            .map((number) => ({
+              id: number.id,
+              number:
+                number.numero === 0 ? item.cantidad_numeros : number.numero,
+              status: number.estado,
+              buyer: number.comprador_nombre || '',
+              notes: number.notas || '',
+            }))
+            .sort((first, second) => first.number - second.number),
         );
       })
       .catch((loadError: Error) => setError(loadError.message))
@@ -71,13 +77,22 @@ export function useRaffle(raffleId?: string) {
   }, [raffleId]);
 
   const updateStatus = async (number: number, status: NumberStatus) => {
+    if (raffle?.estado !== 'activa') {
+      setError('Esta rifa está cerrada y sus números no se pueden modificar.');
+      return false;
+    }
     const currentNumber = numbers.find((item) => item.number === number);
     if (!currentNumber) return false;
 
     setSaving(true);
     setError('');
     try {
-      await updateRaffleNumber(currentNumber.id, status, currentNumber.buyer);
+      await updateRaffleNumber(
+        currentNumber.id,
+        status,
+        currentNumber.buyer,
+        currentNumber.notes,
+      );
       setNumbers((current) =>
         current.map((item) =>
           item.number === number ? { ...item, status } : item,
@@ -100,18 +115,23 @@ export function useRaffle(raffleId?: string) {
     number: number,
     status: NumberStatus,
     buyer: string,
+    notes: string,
   ) => {
+    if (raffle?.estado !== 'activa') {
+      setError('Esta rifa está cerrada y sus números no se pueden modificar.');
+      return false;
+    }
     const currentNumber = numbers.find((item) => item.number === number);
     if (!currentNumber) return false;
 
     setSaving(true);
     setError('');
     try {
-      await updateRaffleNumber(currentNumber.id, status, buyer);
+      await updateRaffleNumber(currentNumber.id, status, buyer, notes);
       setNumbers((current) =>
         current.map((item) =>
           item.number === number
-            ? { ...item, status, buyer: buyer.trim() }
+            ? { ...item, status, buyer: buyer.trim(), notes: notes.trim() }
             : item,
         ),
       );

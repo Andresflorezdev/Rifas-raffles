@@ -5,6 +5,7 @@ export async function updateRaffleNumber(
   id: string,
   status: NumberStatus,
   buyer: string,
+  notes: string,
 ) {
   if (!isSupabaseConfigured) return;
 
@@ -13,6 +14,7 @@ export async function updateRaffleNumber(
     .update({
       estado: status,
       comprador_nombre: buyer.trim() || null,
+      notas: notes.trim() || null,
     })
     .eq('id', id);
 
