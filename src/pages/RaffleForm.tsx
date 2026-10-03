@@ -1,48 +1,29 @@
-import { CalendarDays, ImagePlus, Save } from 'lucide-react';
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { CalendarDays, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { AppHeader } from '../components/AppHeader';
+import { RaffleImageInput } from '../components/raffles/RaffleImageInput';
+import { useRaffleForm } from '../hooks/useRaffleForm';
 
 export function RaffleForm() {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [quantity, setQuantity] = useState('100');
-  const [price, setPrice] = useState('15000');
-  const [drawDate, setDrawDate] = useState('');
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!name.trim() || Number(quantity) < 1 || Number(price) < 0) {
-      setError('Completa el nombre, la cantidad y el precio.');
-      return;
-    }
-    setError('');
-    setSaving(true);
-    if (isSupabaseConfigured) {
-      const { error: insertError } = await supabase.from('rifas').insert({
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        nombre: name.trim(),
-        descripcion: description.trim() || null,
-        imagen_url: imageUrl.trim() || null,
-        cantidad_numeros: Number(quantity),
-        precio_numero: Number(price),
-        fecha_sorteo: drawDate || null,
-        estado: 'activa',
-      });
-      if (insertError) {
-        setError(insertError.message);
-        setSaving(false);
-        return;
-      }
-    }
-    navigate('/inicio');
-  };
+  const {
+    name,
+    setName,
+    description,
+    setDescription,
+    imageFile,
+    setImageFile,
+    quantity,
+    setQuantity,
+    price,
+    setPrice,
+    drawDate,
+    setDrawDate,
+    error,
+    saving,
+    today,
+    handleSubmit,
+  } = useRaffleForm();
 
   return (
     <main className="app-shell form-page">
@@ -56,7 +37,9 @@ export function RaffleForm() {
         </p>
         <form className="raffle-form" onSubmit={handleSubmit}>
           <label>
-            Nombre de la rifa
+            <span className="field-label">
+              Nombre de la rifa <span className="required-mark">*</span>
+            </span>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -64,7 +47,9 @@ export function RaffleForm() {
             />
           </label>
           <label>
-            Descripción del premio
+            <span className="field-label">
+              Descripción del premio <span className="required-mark">*</span>
+            </span>
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -72,20 +57,17 @@ export function RaffleForm() {
               rows={4}
             />
           </label>
-          <label>
-            Imagen del premio <span className="label-hint">opcional</span>
-            <div className="input-icon">
-              <ImagePlus size={18} />
-              <input
-                value={imageUrl}
-                onChange={(event) => setImageUrl(event.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-          </label>
+
+          <RaffleImageInput
+            selectedFile={imageFile}
+            onChange={(file) => setImageFile(file)}
+          />
+
           <div className="form-grid">
             <label>
-              Cantidad de números
+              <span className="field-label">
+                Cantidad de números <span className="required-mark">*</span>
+              </span>
               <input
                 type="number"
                 min="1"
@@ -94,7 +76,9 @@ export function RaffleForm() {
               />
             </label>
             <label>
-              Precio por número
+              <span className="field-label">
+                Precio por número <span className="required-mark">*</span>
+              </span>
               <input
                 type="number"
                 min="0"
@@ -104,11 +88,14 @@ export function RaffleForm() {
             </label>
           </div>
           <label>
-            Fecha del sorteo <span className="label-hint">opcional</span>
+            <span className="field-label">
+              Fecha del sorteo <span className="required-mark">*</span>
+            </span>
             <div className="input-icon">
               <CalendarDays size={18} />
               <input
                 type="date"
+                min={today}
                 value={drawDate}
                 onChange={(event) => setDrawDate(event.target.value)}
               />

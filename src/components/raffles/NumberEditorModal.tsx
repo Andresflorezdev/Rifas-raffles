@@ -1,14 +1,16 @@
 import { Save, X } from 'lucide-react';
-import { useState } from 'react';
 import type { NumberStatus } from '../../types/raffle';
 import type { RaffleNumberView } from '../../hooks/useRaffle';
-
-const statuses: NumberStatus[] = ['disponible', 'apartado', 'pagado'];
+import { NUMBER_STATUSES, useNumberEditor } from '../../hooks/useNumberEditor';
 
 interface NumberEditorModalProps {
   number: RaffleNumberView;
   onClose: () => void;
-  onSave: (status: NumberStatus, buyer: string) => Promise<boolean>;
+  onSave: (
+    status: NumberStatus,
+    buyer: string,
+    notes: string,
+  ) => Promise<boolean>;
 }
 
 export function NumberEditorModal({
@@ -16,18 +18,18 @@ export function NumberEditorModal({
   onClose,
   onSave,
 }: NumberEditorModalProps) {
-  const [status, setStatus] = useState<NumberStatus>(number.status);
-  const [buyer, setBuyer] = useState(number.buyer);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onSave(status, buyer);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    status,
+    buyer,
+    notes,
+    error,
+    saving,
+    isBuyerRequired,
+    handleStatusChange,
+    handleBuyerChange,
+    setNotes,
+    handleSubmit,
+  } = useNumberEditor({ number, onSave });
 
   return (
     <div
@@ -57,54 +59,83 @@ export function NumberEditorModal({
         <p className="muted modal-description">
           Elige el estado de este número y registra los datos del comprador.
         </p>
-        <fieldset className="status-options">
-          <legend>Estado de la compra</legend>
-          {statuses.map((item) => (
-            <label
-              key={item}
-              className={`status-option ${status === item ? 'chosen' : ''}`}
+
+        <form onSubmit={handleSubmit}>
+          <fieldset className="status-options">
+            <legend>Estado de la compra</legend>
+            {NUMBER_STATUSES.map((item) => (
+              <label
+                key={item}
+                className={`status-option ${status === item ? 'chosen' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="number-status"
+                  value={item}
+                  checked={status === item}
+                  onChange={() => handleStatusChange(item)}
+                />
+                <span className={`status-dot ${item}`} />
+                <span>
+                  <strong>{item[0].toUpperCase() + item.slice(1)}</strong>
+                  <small>
+                    {item === 'disponible'
+                      ? 'Nadie lo ha reservado'
+                      : item === 'apartado'
+                        ? 'El comprador aún debe pagar'
+                        : 'Pago confirmado'}
+                  </small>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+
+          <label className="modal-label">
+            <span className="field-label">
+              Nombre de la persona{' '}
+              {isBuyerRequired && <span className="required-mark">*</span>}
+            </span>
+            <input
+              value={buyer}
+              onChange={(event) => handleBuyerChange(event.target.value)}
+              placeholder="Ej. Camila Rojas"
+              required={isBuyerRequired}
+            />
+          </label>
+
+          <label className="modal-label">
+            <span className="field-label">Notas (opcional)</span>
+            <textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Teléfono, referencia u otra información"
+              rows={3}
+            />
+          </label>
+
+          {error && (
+            <p className="form-error" style={{ marginTop: '12px' }}>
+              {error}
+            </p>
+          )}
+
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onClose}
             >
-              <input
-                type="radio"
-                name="number-status"
-                value={item}
-                checked={status === item}
-                onChange={() => setStatus(item)}
-              />
-              <span className={`status-dot ${item}`} />
-              <span>
-                <strong>{item[0].toUpperCase() + item.slice(1)}</strong>
-                <small>
-                  {item === 'disponible'
-                    ? 'Nadie lo ha reservado'
-                    : item === 'apartado'
-                      ? 'El comprador aún debe pagar'
-                      : 'Pago confirmado'}
-                </small>
-              </span>
-            </label>
-          ))}
-        </fieldset>
-        <label className="modal-label">
-          Nombre del comprador
-          <input
-            value={buyer}
-            onChange={(event) => setBuyer(event.target.value)}
-            placeholder="Ej. Camila Rojas"
-          />
-        </label>
-        <div className="modal-actions">
-          <button className="secondary-button" onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className="primary-button"
-            onClick={() => void handleSave()}
-            disabled={saving}
-          >
-            <Save size={16} /> {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
-        </div>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={saving}
+            >
+              <Save size={16} /> {saving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   );

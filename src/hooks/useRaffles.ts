@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
-import { countNumbers, listRaffles } from '../services/raffleService';
+import {
+  countNumbers,
+  deleteRaffle,
+  listRaffles,
+  updateRaffleStatus,
+} from '../services/raffleService';
 import type { RaffleStatus } from '../types/raffle';
+import { getUserFriendlyError } from '../lib/errorMessages';
 
 export interface RaffleCardData {
   id: string;
@@ -86,9 +92,41 @@ export function useRaffles() {
           }),
         );
       })
-      .catch((loadError: Error) => setError(loadError.message))
+      .catch((loadError: Error) =>
+        setError(
+          getUserFriendlyError(loadError, 'No se pudieron cargar las rifas.'),
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
-  return { raffles, loading, error };
+  const changeStatus = async (id: string, status: RaffleStatus) => {
+    setError('');
+    try {
+      await updateRaffleStatus(id, status);
+      setRaffles((current) =>
+        current.map((raffle) =>
+          raffle.id === id ? { ...raffle, status } : raffle,
+        ),
+      );
+    } catch (statusError) {
+      setError(
+        getUserFriendlyError(statusError, 'No se pudo actualizar la rifa.'),
+      );
+    }
+  };
+
+  const remove = async (id: string) => {
+    setError('');
+    try {
+      await deleteRaffle(id);
+      setRaffles((current) => current.filter((raffle) => raffle.id !== id));
+    } catch (deleteError) {
+      setError(
+        getUserFriendlyError(deleteError, 'No se pudo eliminar la rifa.'),
+      );
+    }
+  };
+
+  return { raffles, loading, error, changeStatus, remove };
 }

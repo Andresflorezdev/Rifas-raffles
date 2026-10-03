@@ -1,5 +1,5 @@
-import { Save } from 'lucide-react';
-import { useState } from 'react';
+import { Pencil, LockKeyhole } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppHeader } from '../components/AppHeader';
 import { NumberBoard } from '../components/raffles/NumberBoard';
@@ -11,6 +11,7 @@ import {
   type RaffleView,
 } from '../components/raffles/RaffleToolbar';
 import { RaffleStats } from '../components/raffles/RaffleStats';
+import { RaffleEditModal } from '../components/raffles/RaffleEditModal';
 import { useRaffle } from '../hooks/useRaffle';
 import type { NumberStatus } from '../types/raffle';
 
@@ -25,17 +26,39 @@ function formatDate(value: string | null) {
 
 export function RaffleDetail() {
   const { raffleId } = useParams();
-  const { raffle, numbers, loading, error, updateStatus, updateNumber } =
-    useRaffle(raffleId);
+  const {
+    raffle,
+    numbers,
+    loading,
+    error,
+    updateStatus,
+    updateNumber,
+    editRaffle,
+  } = useRaffle(raffleId);
   const [view, setView] = useState<RaffleView>('board');
   const [filter, setFilter] = useState<NumberFilter>('todos');
+  const [search, setSearch] = useState('');
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
+  const [editingRaffle, setEditingRaffle] = useState(false);
 
-  const visibleNumbers =
-    filter === 'todos'
-      ? numbers
-      : numbers.filter((item) => item.status === filter);
-  const selectedItem = numbers.find((item) => item.number === selectedNumber);
+  const searchedNumbers = useMemo(() => {
+    const visible =
+      filter === 'todos'
+        ? numbers
+        : numbers.filter((item) => item.status === filter);
+
+    if (!search.trim()) return visible;
+
+    return visible.filter((item) =>
+      String(item.number).padStart(2, '0').includes(search.trim()),
+    );
+  }, [numbers, filter, search]);
+
+  const selectedItem = useMemo(
+    () => numbers.find((item) => item.number === selectedNumber) || null,
+    [numbers, selectedNumber],
+  );
+  const isEditable = raffle?.estado === 'activa';
 
   if (loading) {
     return <div className="loading-screen">Cargando tu rifa...</div>;
@@ -65,44 +88,73 @@ export function RaffleDetail() {
               {raffle.precio_numero.toLocaleString('es-CO')} por número
             </p>
           </div>
-          <button className="secondary-button">
-            <Save size={16} /> Exportar
+          <button
+            className="secondary-button"
+            disabled={!isEditable}
+            onClick={() => setEditingRaffle(true)}
+            title={isEditable ? 'Editar rifa' : 'La rifa está cerrada'}
+          >
+            {isEditable ? <Pencil size={16} /> : <LockKeyhole size={16} />}
+            {isEditable ? 'Editar rifa' : 'Rifa cerrada'}
           </button>
         </div>
-        <RaffleStats raffle={raffle} numbers={numbers} />
-        {error && <p className="form-error">{error}</p>}
-        <RaffleToolbar
-          view={view}
-          filter={filter}
-          onViewChange={setView}
-          onFilterChange={setFilter}
-        />
-        {view === 'board' ? (
-          <NumberBoard
-            numbers={visibleNumbers}
-            onSelect={(item) => setSelectedNumber(item.number)}
+        <section className="detail-card">
+          <RaffleStats raffle={raffle} numbers={numbers} />
+          {error && <p className="form-error">{error}</p>}
+          {!isEditable && (
+            <p className="locked-message">
+              Esta rifa está {raffle.estado} y no se puede modificar.
+            </p>
+          )}
+          <RaffleToolbar
+            view={view}
+            filter={filter}
+            onViewChange={setView}
+            onFilterChange={setFilter}
+            search={search}
+            onSearchChange={setSearch}
           />
-        ) : (
-          <NumberTable
-            numbers={visibleNumbers}
-            onSelect={(item) => setSelectedNumber(item.number)}
-            onStatusChange={updateStatus}
-          />
-        )}
+          {view === 'board' ? (
+            <NumberBoard
+              numbers={searchedNumbers}
+              onSelect={(item) => setSelectedNumber(item.number)}
+              disabled={!isEditable}
+            />
+          ) : (
+            <NumberTable
+              numbers={searchedNumbers}
+              onSelect={(item) => setSelectedNumber(item.number)}
+              onStatusChange={updateStatus}
+              disabled={!isEditable}
+            />
+          )}
+        </section>
       </div>
       {selectedItem && (
         <NumberEditorModal
           number={selectedItem}
           onClose={() => setSelectedNumber(null)}
-          onSave={async (status: NumberStatus, buyer: string) => {
+          onSave={async (
+            status: NumberStatus,
+            buyer: string,
+            notes: string,
+          ) => {
             const updated = await updateNumber(
               selectedItem.number,
               status,
               buyer,
+              notes,
             );
             if (updated) setSelectedNumber(null);
             return updated;
           }}
+        />
+      )}
+      {editingRaffle && isEditable && (
+        <RaffleEditModal
+          raffle={raffle}
+          onClose={() => setEditingRaffle(false)}
+          onSave={editRaffle}
         />
       )}
     </main>

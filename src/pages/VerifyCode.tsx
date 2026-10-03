@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { getUserFriendlyError } from '../lib/errorMessages';
 
 export function VerifyCode() {
   const navigate = useNavigate();
@@ -33,7 +34,9 @@ export function VerifyCode() {
         type: 'email',
       });
       if (verifyError) {
-        setError(verifyError.message);
+        setError(
+          getUserFriendlyError(verifyError, 'No se pudo verificar el código.'),
+        );
         setChecking(false);
         return;
       }

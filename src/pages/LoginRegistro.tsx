@@ -4,6 +4,10 @@ import { ArrowRight, Mail, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { getUserFriendlyError } from '../lib/errorMessages';
+
+const allowedEmailPattern = /^[^\s@]+@(gmail|hotmail)\.com$/i;
+const namePattern = /^[\p{L}\s]+$/u;
 
 export function LoginRegistro() {
   const navigate = useNavigate();
@@ -15,21 +19,28 @@ export function LoginRegistro() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!nombre.trim()) return setError('Escribe tu nombre para continuar.');
-    if (!email.includes('@')) return setError('Escribe un correo válido.');
+    if (!namePattern.test(nombre.trim())) {
+      return setError('El nombre solo puede contener letras y espacios.');
+    }
+    if (!allowedEmailPattern.test(email.trim())) {
+      return setError('Usa un correo Gmail o Hotmail terminado en .com.');
+    }
     setError('');
     setSending(true);
     if (isSupabaseConfigured) {
       const { error: authError } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.trim().toLowerCase(),
         options: { data: { nombre: nombre.trim() } },
       });
       if (authError) {
-        setError(authError.message);
+        setError(
+          getUserFriendlyError(authError, 'No se pudo enviar el código.'),
+        );
         setSending(false);
         return;
       }
     }
-    sessionStorage.setItem('raffles-email', email);
+    sessionStorage.setItem('raffles-email', email.trim().toLowerCase());
     sessionStorage.setItem('raffles-name', nombre.trim());
     navigate('/verificar');
   };
@@ -70,8 +81,11 @@ export function LoginRegistro() {
             <label>
               Tu nombre
               <input
+                required
                 value={nombre}
-                onChange={(event) => setNombre(event.target.value)}
+                onChange={(event) =>
+                  setNombre(event.target.value.replace(/[^\p{L}\s]/gu, ''))
+                }
                 placeholder="Ej. Camila Rojas"
                 autoComplete="name"
               />
@@ -81,10 +95,22 @@ export function LoginRegistro() {
               <div className="input-icon">
                 <Mail size={18} />
                 <input
+                  required
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    event.currentTarget.setCustomValidity('');
+                    setEmail(event.target.value);
+                  }}
                   placeholder="camila@correo.com"
                   type="email"
+                  inputMode="email"
+                  pattern="[^\s@]+@(gmail|hotmail)\.com"
+                  title="Usa un correo Gmail o Hotmail terminado en .com"
+                  onInvalid={(event) =>
+                    event.currentTarget.setCustomValidity(
+                      'Usa un correo Gmail o Hotmail terminado en .com.',
+                    )
+                  }
                   autoComplete="email"
                 />
               </div>

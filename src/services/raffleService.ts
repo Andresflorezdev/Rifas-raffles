@@ -1,5 +1,10 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
-import type { NumberStatus, Raffle, RaffleNumber } from '../types/raffle';
+import type {
+  NumberStatus,
+  Raffle,
+  RaffleNumber,
+  RaffleStatus,
+} from '../types/raffle';
 
 export interface RaffleSummary extends Raffle {
   numeros: Pick<RaffleNumber, 'estado'>[];
@@ -7,6 +12,46 @@ export interface RaffleSummary extends Raffle {
 
 export interface RaffleWithNumbers extends Raffle {
   numeros: RaffleNumber[];
+}
+
+const RAFFLE_IMAGE_BUCKET = 'rifas-imagenes';
+
+export interface CreateRaffleInput {
+  nombre: string;
+  descripcion?: string | null;
+  imagen_url?: string | null;
+  cantidad_numeros: number;
+  precio_numero: number;
+  fecha_sorteo?: string | null;
+}
+
+export async function createRaffle(input: CreateRaffleInput): Promise<Raffle> {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase no está configurado.');
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    throw new Error('Debes iniciar sesión para crear una rifa.');
+  }
+
+  const { data, error } = await supabase
+    .from('rifas')
+    .insert({
+      user_id: userData.user.id,
+      nombre: input.nombre.trim(),
+      descripcion: input.descripcion?.trim() || null,
+      imagen_url: input.imagen_url || null,
+      cantidad_numeros: input.cantidad_numeros,
+      precio_numero: input.precio_numero,
+      fecha_sorteo: input.fecha_sorteo || null,
+      estado: 'activa',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Raffle;
 }
 
 export async function listRaffles(): Promise<RaffleSummary[]> {
@@ -30,6 +75,79 @@ export async function getRaffle(id: string): Promise<RaffleWithNumbers> {
 
   if (error) throw error;
   return data as RaffleWithNumbers;
+}
+
+export async function updateRaffleStatus(id: string, status: RaffleStatus) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase
+    .from('rifas')
+    .update({ estado: status })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateRaffle(
+  id: string,
+  values: Pick<
+    Raffle,
+    | 'nombre'
+    | 'descripcion'
+    | 'imagen_url'
+    | 'cantidad_numeros'
+    | 'precio_numero'
+    | 'fecha_sorteo'
+  >,
+) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase.from('rifas').update(values).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateRaffleNotes(id: string, notes: string) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase
+    .from('rifas')
+    .update({ notas: notes.trim() || null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteRaffle(id: string) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase.from('rifas').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function uploadRaffleImage(file: File) {
+  if (!isSupabaseConfigured) return null;
+
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Selecciona un archivo de imagen válido.');
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('La imagen no puede superar los 5 MB.');
+  }
+
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from(RAFFLE_IMAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      contentType: file.type,
+      upsert: false,
+    });
+  if (error) throw error;
+
+  const { data } = supabase.storage
+    .from(RAFFLE_IMAGE_BUCKET)
+    .getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export function countNumbers(
