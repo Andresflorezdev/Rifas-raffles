@@ -3,17 +3,19 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { AppHeader } from '../components/AppHeader';
+import { getUserFriendlyError } from '../lib/errorMessages';
 
 export function MiCuenta() {
   const [name, setName] = useState(
-    sessionStorage.getItem('raffles-name') || '',
+    sessionStorage.getItem('raffles-name') || 'Camila Rojas',
   );
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('+57 300 123 4567');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
+
     void supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
       const { data: profile, error: profileError } = await supabase
@@ -22,7 +24,12 @@ export function MiCuenta() {
         .eq('id', data.user.id)
         .maybeSingle();
       if (profileError) {
-        setError(profileError.message);
+        setError(
+          getUserFriendlyError(
+            profileError,
+            'No se pudo cargar tu información.',
+          ),
+        );
         return;
       }
       if (profile) {
@@ -47,14 +54,19 @@ export function MiCuenta() {
           .update({ nombre: name.trim(), telefono: phone.trim() || null })
           .eq('id', user.id);
         if (updateError) {
-          setError(updateError.message);
+          setError(
+            getUserFriendlyError(
+              updateError,
+              'No se pudieron guardar los cambios.',
+            ),
+          );
           return;
         }
       }
     }
     sessionStorage.setItem('raffles-name', name.trim());
     setSaved(true);
-    window.setTimeout(() => setSaved(false), 2500);
+    setTimeout(() => setSaved(false), 2200);
   };
 
   return (

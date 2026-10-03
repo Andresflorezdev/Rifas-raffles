@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { updateRaffleNumber } from '../services/raffleNumberService';
 import { getRaffle, updateRaffle } from '../services/raffleService';
 import type { NumberStatus, Raffle } from '../types/raffle';
+import { getUserFriendlyError } from '../lib/errorMessages';
 
 export interface RaffleNumberView {
   id: string;
@@ -72,7 +73,9 @@ export function useRaffle(raffleId?: string) {
             .sort((first, second) => first.number - second.number),
         );
       })
-      .catch((loadError: Error) => setError(loadError.message))
+      .catch((loadError: Error) =>
+        setError(getUserFriendlyError(loadError, 'No se pudo cargar la rifa.')),
+      )
       .finally(() => setLoading(false));
   }, [raffleId]);
 
@@ -101,9 +104,7 @@ export function useRaffle(raffleId?: string) {
       return true;
     } catch (saveError) {
       setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'No se pudo guardar el número.',
+        getUserFriendlyError(saveError, 'No se pudo guardar el número.'),
       );
       return false;
     } finally {
@@ -138,9 +139,7 @@ export function useRaffle(raffleId?: string) {
       return true;
     } catch (saveError) {
       setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'No se pudo guardar el número.',
+        getUserFriendlyError(saveError, 'No se pudo guardar el número.'),
       );
       return false;
     } finally {
@@ -162,9 +161,7 @@ export function useRaffle(raffleId?: string) {
       return true;
     } catch (saveError) {
       setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'No se pudo actualizar la rifa.',
+        getUserFriendlyError(saveError, 'No se pudo actualizar la rifa.'),
       );
       return false;
     } finally {

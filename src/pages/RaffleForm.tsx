@@ -1,9 +1,10 @@
-import { CalendarDays, ImagePlus, Save } from 'lucide-react';
+import { CalendarDays, ImagePlus, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { AppHeader } from '../components/AppHeader';
+import { getUserFriendlyError } from '../lib/errorMessages';
 
 export function RaffleForm() {
   const navigate = useNavigate();
@@ -36,23 +37,24 @@ export function RaffleForm() {
         estado: 'activa',
       });
       if (insertError) {
-        setError(insertError.message);
+        setError(
+          getUserFriendlyError(insertError, 'No se pudo crear la rifa.'),
+        );
         setSaving(false);
         return;
       }
     }
-    navigate('/inicio');
+    navigate('/');
   };
 
   return (
     <main className="app-shell form-page">
-      <AppHeader backLabel="Volver a mis rifas" />
+      <AppHeader backLabel="Volver al panel" />
       <div className="form-content">
         <p className="eyebrow coral-text">Nueva rifa</p>
-        <h1>Cuéntanos qué vas a sortear.</h1>
+        <h1>Crea una rifa atractiva en minutos.</h1>
         <p className="muted">
-          Define los detalles y nosotros prepararemos tus números
-          automáticamente.
+          Define el premio, el valor de cada número y la fecha del sorteo.
         </p>
         <form className="raffle-form" onSubmit={handleSubmit}>
           <label>
@@ -60,7 +62,7 @@ export function RaffleForm() {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Ej. Kit de café de especialidad"
+              placeholder="Ej. PlayStation 5 + 2 juegos"
             />
           </label>
           <label>
@@ -68,8 +70,7 @@ export function RaffleForm() {
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Cuenta brevemente qué incluye el premio"
-              rows={4}
+              placeholder="Incluye detalles del premio, condiciones o método de entrega..."
             />
           </label>
           <label>
@@ -115,18 +116,10 @@ export function RaffleForm() {
             </div>
           </label>
           {error && <p className="form-error">{error}</p>}
-          <div className="form-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => navigate('/inicio')}
-            >
-              Cancelar
-            </button>
-            <button className="primary-button" disabled={saving}>
-              <Save size={17} /> {saving ? 'Guardando...' : 'Crear rifa'}
-            </button>
-          </div>
+          <button className="primary-button" disabled={saving}>
+            <Sparkles size={18} />
+            {saving ? 'Creando rifa...' : 'Publicar rifa'}
+          </button>
         </form>
       </div>
     </main>

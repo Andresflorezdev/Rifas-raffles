@@ -7,6 +7,7 @@ import {
   updateRaffleStatus,
 } from '../services/raffleService';
 import type { RaffleStatus } from '../types/raffle';
+import { getUserFriendlyError } from '../lib/errorMessages';
 
 export interface RaffleCardData {
   id: string;
@@ -91,7 +92,11 @@ export function useRaffles() {
           }),
         );
       })
-      .catch((loadError: Error) => setError(loadError.message))
+      .catch((loadError: Error) =>
+        setError(
+          getUserFriendlyError(loadError, 'No se pudieron cargar las rifas.'),
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
