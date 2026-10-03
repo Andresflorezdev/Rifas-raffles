@@ -1,5 +1,5 @@
 import { Pencil, LockKeyhole } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppHeader } from '../components/AppHeader';
 import { NumberBoard } from '../components/raffles/NumberBoard';
@@ -41,14 +41,23 @@ export function RaffleDetail() {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [editingRaffle, setEditingRaffle] = useState(false);
 
-  const visibleNumbers =
-    filter === 'todos'
-      ? numbers
-      : numbers.filter((item) => item.status === filter);
-  const searchedNumbers = visibleNumbers.filter((item) =>
-    String(item.number).padStart(2, '0').includes(search),
+  const searchedNumbers = useMemo(() => {
+    const visible =
+      filter === 'todos'
+        ? numbers
+        : numbers.filter((item) => item.status === filter);
+
+    if (!search.trim()) return visible;
+
+    return visible.filter((item) =>
+      String(item.number).padStart(2, '0').includes(search.trim()),
+    );
+  }, [numbers, filter, search]);
+
+  const selectedItem = useMemo(
+    () => numbers.find((item) => item.number === selectedNumber) || null,
+    [numbers, selectedNumber],
   );
-  const selectedItem = numbers.find((item) => item.number === selectedNumber);
   const isEditable = raffle?.estado === 'activa';
 
   if (loading) {

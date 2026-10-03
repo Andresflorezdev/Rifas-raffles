@@ -47,12 +47,17 @@ export function NumberTable({
                 <select
                   value={item.status}
                   disabled={disabled}
-                  onChange={(event) =>
-                    onStatusChange(
-                      item.number,
-                      event.target.value as NumberStatus,
-                    )
-                  }
+                  onChange={(event) => {
+                    const nextStatus = event.target.value as NumberStatus;
+                    if (
+                      (nextStatus === 'apartado' || nextStatus === 'pagado') &&
+                      !item.buyer.trim()
+                    ) {
+                      onSelect(item);
+                    } else {
+                      onStatusChange(item.number, nextStatus);
+                    }
+                  }}
                 >
                   <option value="disponible">Disponible</option>
                   <option value="apartado">Apartado</option>

@@ -1,84 +1,29 @@
-import { CalendarDays, ImagePlus, Save } from 'lucide-react';
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { CalendarDays, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
-import { uploadRaffleImage } from '../services/raffleService';
 import { AppHeader } from '../components/AppHeader';
-import { getUserFriendlyError } from '../lib/errorMessages';
-
-function formatLocalDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+import { RaffleImageInput } from '../components/raffles/RaffleImageInput';
+import { useRaffleForm } from '../hooks/useRaffleForm';
 
 export function RaffleForm() {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageName, setImageName] = useState('');
-  const [quantity, setQuantity] = useState('100');
-  const [price, setPrice] = useState('15000');
-  const [drawDate, setDrawDate] = useState('');
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
-  const today = formatLocalDate(new Date());
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (
-      !name.trim() ||
-      !description.trim() ||
-      !quantity ||
-      Number(quantity) < 1 ||
-      !price ||
-      Number(price) < 0 ||
-      !drawDate ||
-      drawDate < today
-    ) {
-      setError(
-        'Completa todos los campos obligatorios y selecciona una fecha válida.',
-      );
-      return;
-    }
-    setError('');
-    setSaving(true);
-    if (isSupabaseConfigured) {
-      let imageUrl: string | null = null;
-      if (imageFile) {
-        try {
-          imageUrl = await uploadRaffleImage(imageFile);
-        } catch (uploadError) {
-          setError(
-            getUserFriendlyError(uploadError, 'No se pudo subir la imagen.'),
-          );
-          setSaving(false);
-          return;
-        }
-      }
-      const { error: insertError } = await supabase.from('rifas').insert({
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        nombre: name.trim(),
-        descripcion: description.trim() || null,
-        imagen_url: imageUrl,
-        cantidad_numeros: Number(quantity),
-        precio_numero: Number(price),
-        fecha_sorteo: drawDate || null,
-        estado: 'activa',
-      });
-      if (insertError) {
-        setError(
-          getUserFriendlyError(insertError, 'No se pudo crear la rifa.'),
-        );
-        setSaving(false);
-        return;
-      }
-    }
-    navigate('/inicio');
-  };
+  const {
+    name,
+    setName,
+    description,
+    setDescription,
+    imageFile,
+    setImageFile,
+    quantity,
+    setQuantity,
+    price,
+    setPrice,
+    drawDate,
+    setDrawDate,
+    error,
+    saving,
+    today,
+    handleSubmit,
+  } = useRaffleForm();
 
   return (
     <main className="app-shell form-page">
@@ -112,25 +57,12 @@ export function RaffleForm() {
               rows={4}
             />
           </label>
-          <label>
-            <span className="field-label">
-              Imagen del premio{' '}
-              <span className="label-hint">opcional · JPG, PNG o WEBP</span>
-            </span>
-            <div className="input-icon">
-              <ImagePlus size={18} />
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] || null;
-                  setImageFile(file);
-                  setImageName(file?.name || '');
-                }}
-              />
-            </div>
-            {imageName && <span className="file-name">{imageName}</span>}
-          </label>
+
+          <RaffleImageInput
+            selectedFile={imageFile}
+            onChange={(file) => setImageFile(file)}
+          />
+
           <div className="form-grid">
             <label>
               <span className="field-label">

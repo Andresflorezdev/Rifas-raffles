@@ -16,6 +16,44 @@ export interface RaffleWithNumbers extends Raffle {
 
 const RAFFLE_IMAGE_BUCKET = 'rifas-imagenes';
 
+export interface CreateRaffleInput {
+  nombre: string;
+  descripcion?: string | null;
+  imagen_url?: string | null;
+  cantidad_numeros: number;
+  precio_numero: number;
+  fecha_sorteo?: string | null;
+}
+
+export async function createRaffle(input: CreateRaffleInput): Promise<Raffle> {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase no está configurado.');
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    throw new Error('Debes iniciar sesión para crear una rifa.');
+  }
+
+  const { data, error } = await supabase
+    .from('rifas')
+    .insert({
+      user_id: userData.user.id,
+      nombre: input.nombre.trim(),
+      descripcion: input.descripcion?.trim() || null,
+      imagen_url: input.imagen_url || null,
+      cantidad_numeros: input.cantidad_numeros,
+      precio_numero: input.precio_numero,
+      fecha_sorteo: input.fecha_sorteo || null,
+      estado: 'activa',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Raffle;
+}
+
 export async function listRaffles(): Promise<RaffleSummary[]> {
   if (!isSupabaseConfigured) return [];
 
