@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react';
+import { AlertTriangle, Plus, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppHeader } from '../components/AppHeader';
@@ -12,8 +12,9 @@ function formatCurrency(value: number) {
 export function Home() {
   const navigate = useNavigate();
   const name = sessionStorage.getItem('raffles-name') || 'Creador';
-  const { raffles, loading, error } = useRaffles();
+  const { raffles, loading, error, changeStatus, remove } = useRaffles();
   const [search, setSearch] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const visibleRaffles = raffles.filter((raffle) =>
     raffle.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
@@ -21,6 +22,12 @@ export function Home() {
   const activeRaffles = raffles.filter((raffle) => raffle.status === 'activa');
   const soldNumbers = raffles.reduce((total, raffle) => total + raffle.sold, 0);
   const revenue = raffles.reduce((total, raffle) => total + raffle.revenue, 0);
+
+  const handleDelete = (id: string) => {
+    setPendingDelete(id);
+  };
+
+  const raffleToDelete = raffles.find((raffle) => raffle.id === pendingDelete);
 
   return (
     <main className="app-shell">
@@ -84,16 +91,64 @@ export function Home() {
               key={raffle.id}
               raffle={raffle}
               onOpen={(id) => navigate(`/rifa/${id}`)}
+              onStatusChange={(id, status) => void changeStatus(id, status)}
+              onDelete={handleDelete}
             />
           ))}
         </div>
-        <button
-          className="empty-action"
-          onClick={() => navigate('/rifa/nueva')}
-        >
-          <Plus size={18} /> Crear otra rifa
-        </button>
+        {!loading && raffles.length === 0 && (
+          <button
+            className="empty-action"
+            onClick={() => navigate('/rifa/nueva')}
+          >
+            <Plus size={18} /> Crear otra rifa
+          </button>
+        )}
       </div>
+      {raffleToDelete && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setPendingDelete(null);
+          }}
+        >
+          <section className="confirm-modal" role="dialog" aria-modal="true">
+            <button
+              className="icon-button confirm-close"
+              onClick={() => setPendingDelete(null)}
+              aria-label="Cerrar confirmación"
+            >
+              <X size={18} />
+            </button>
+            <div className="confirm-icon">
+              <AlertTriangle size={22} />
+            </div>
+            <p className="eyebrow coral-text">Eliminar rifa</p>
+            <h2>¿Eliminar “{raffleToDelete.name}”?</h2>
+            <p className="muted">
+              Esta acción eliminará la rifa y sus números. No se puede deshacer.
+            </p>
+            <div className="confirm-actions">
+              <button
+                className="secondary-button"
+                onClick={() => setPendingDelete(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="delete-confirm-button"
+                onClick={() => {
+                  void remove(raffleToDelete.id);
+                  setPendingDelete(null);
+                }}
+              >
+                Eliminar rifa
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

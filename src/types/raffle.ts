@@ -1,4 +1,9 @@
-export type RaffleStatus = 'activa' | 'finalizada' | 'cancelada';
+export type RaffleStatus =
+  | 'activa'
+  | 'pausada'
+  | 'finalizada'
+  | 'cancelada'
+  | 'archivada';
 export type NumberStatus = 'disponible' | 'apartado' | 'pagado';
 
 export interface Profile {
@@ -13,6 +18,7 @@ export interface Raffle {
   user_id: string;
   nombre: string;
   descripcion: string | null;
+  notas: string | null;
   imagen_url: string | null;
   cantidad_numeros: number;
   precio_numero: number;

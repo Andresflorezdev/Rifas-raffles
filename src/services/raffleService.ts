@@ -1,5 +1,10 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
-import type { NumberStatus, Raffle, RaffleNumber } from '../types/raffle';
+import type {
+  NumberStatus,
+  Raffle,
+  RaffleNumber,
+  RaffleStatus,
+} from '../types/raffle';
 
 export interface RaffleSummary extends Raffle {
   numeros: Pick<RaffleNumber, 'estado'>[];
@@ -30,6 +35,23 @@ export async function getRaffle(id: string): Promise<RaffleWithNumbers> {
 
   if (error) throw error;
   return data as RaffleWithNumbers;
+}
+
+export async function updateRaffleStatus(id: string, status: RaffleStatus) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase
+    .from('rifas')
+    .update({ estado: status })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteRaffle(id: string) {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase.from('rifas').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export function countNumbers(
